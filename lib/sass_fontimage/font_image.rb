@@ -1,20 +1,24 @@
 class SassFontimage::FontImage
   
   # @param font String Path to a font (one that RMagick can use)
-  # @param size Integer Default font size
-  # @param color String Default color
   # @param options Options string
   #
+  # @option options size Integer Default font size
+  # @option options color String Default color  
   # @option options :write_path The path to write the icon to with write (default = "")
-  # @option options :filename_prefix Prefix to use for filename (default = icon)
-  # @option options :filetype Extension to use when writing file (default = png)
-  def initialize(font, size = 16, color = "#000000", options = {})
-    @font, @size, @color = font, size, color
+  # @option options :file_prefix Prefix to use for filename (default = icon)
+  # @option options :file_type Extension to use when writing file (default = png)
+  def initialize(font, options = {})
+    @font = font
+    
+    raise ArgumentError, "Font '#{font}' not found on disk" unless File.exist?(font)
     
     defaults = {
+      :size => 16, 
+      :color => "#000000",
       :write_path => "",
-      :filename_prefix => "icon",
-      :filetype => "png"
+      :file_prefix => "icon",
+      :file_type => "png"
     }
     @options = defaults.update(options)
   end
@@ -24,21 +28,24 @@ class SassFontimage::FontImage
   # @see SassFontimage::FontImage#write
   # 
   # @return Magick::Image the image with the charactor drawn.
-  def render(char, color = @color, size = @size)
-    img = Magick::Image.new(size, size) 
+  def render(char, color = @options[:color], size = @options[:size])
+    img = Magick::Image.new(size.to_i, size.to_i) do
+      self.background_color = "transparent"
+    end
 
     draw = Magick::Draw.new
+    
+    puts color.class.inspect
+    puts size.inspect
     
     char = convert_to_unicode(char)
 
     draw.font = @font.to_s
     draw.interline_spacing = 0
-    draw.pointsize = size
+    draw.pointsize = size.to_i
     draw.gravity = Magick::CenterGravity
     draw.fill = color
     draw.text_antialias = true
-
-    # m = draw.get_type_metrics(img, char)
 
     draw.annotate(img, 0, 0, 0, 0, char)
     
@@ -59,20 +66,22 @@ class SassFontimage::FontImage
   # @param size Integer An optional fontsize
   # 
   # @return String The filename written to options[:write_path]
-  def write(char, color = @color, size = @size)
+  def write(char, color = @options[:color], size = @options[:size])
     img = self.render(char, color, size)
 
     filename = []
-    filename << @options[:filename_prefix]
+    filename << @options[:file_prefix]
     filename << "#{size}x#{size}"
     filename << color.gsub(/[^a-z0-9_]/i, "")
     filename << convert_to_unicode(char).codepoints.first.to_s(16)
     
-    filename = filename.join("-") + "." + @options[:filetype]
+    filename = filename.join("-") + "." + @options[:file_type]
     
     path = Pathname.new(@options[:write_path]) + filename
     
-    img.write(path.to_s)
+    img.write(path.to_s) do
+      self.format = "PNG32"
+    end 
     
     filename
   end
