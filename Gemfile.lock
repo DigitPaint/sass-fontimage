@@ -2,9 +2,11 @@ GEM
   remote: http://rubygems.org/
   specs:
     rmagick (2.13.1)
+    sass (3.1.18)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   rmagick
+  sass
