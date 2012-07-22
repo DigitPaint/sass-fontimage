@@ -29,17 +29,12 @@ class SassFontimage::FontImage
   # 
   # @return Magick::Image the image with the charactor drawn.
   def render(char, color = @options[:color], size = @options[:size])
-    img = Magick::Image.new(size.to_i, size.to_i) do
-      self.background_color = "transparent"
-    end
+    img = Magick::Image.new(size.to_i, size.to_i, Magick::HatchFill.new('transparent', 'transparent'))
 
     draw = Magick::Draw.new
-    
-    puts color.class.inspect
-    puts size.inspect
-    
-    char = convert_to_unicode(char)
 
+    char = convert_to_unicode(char)
+    
     draw.font = @font.to_s
     draw.interline_spacing = 0
     draw.pointsize = size.to_i
