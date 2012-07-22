@@ -1,1 +1,6 @@
 .DS_Store
+test/scss/output
+test/output
+test/scss/*.css
+test/scss/**/*.css
+.sass-cache/
