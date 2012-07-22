@@ -9,7 +9,7 @@ class SassFontimage::FontImage
   # @option options :file_prefix Prefix to use for filename (default = icon)
   # @option options :file_type Extension to use when writing file (default = png)
   def initialize(font, options = {})
-    @font = font
+    @font = Pathname.new(font)
     
     raise ArgumentError, "Font '#{font}' not found on disk" unless File.exist?(font)
     
@@ -60,10 +60,25 @@ class SassFontimage::FontImage
   # @param color String An optional color, takes default value otherwise
   # @param size Integer An optional fontsize
   # 
-  # @return String The filename written to options[:write_path]
+  # @return String The path of the written image
   def write(char, color = @options[:color], size = @options[:size])
+    path = image_path(char, color, size)
+    
+    # Let's not regenerate the same image if the font hasn't changed
+    return path if(path.exist? && @font.mtime <= path.mtime)
+    
     img = self.render(char, color, size)
-
+    
+    img.write(path.to_s) do
+      self.format = "PNG32"
+    end 
+    
+    path
+  end
+  
+  protected
+  
+  def image_path(char,color,size)
     filename = []
     filename << @options[:file_prefix]
     filename << "#{size}x#{size}"
@@ -73,21 +88,15 @@ class SassFontimage::FontImage
     filename = filename.join("-") + "." + @options[:file_type]
     
     path = Pathname.new(@options[:write_path]) + filename
-    
-    img.write(path.to_s) do
-      self.format = "PNG32"
-    end 
-    
-    filename
   end
-  
-  protected
   
   # Converts css escape to true unicode char
   # also validates if it's truly only one character
   def convert_to_unicode(char)
+    
     if char =~ /\A\\/
-      char = [char[1..-1].to_i(16)].pack("U")
+      char = char.gsub("\\","") # Fix double escaping
+      char = [char[0..-1].to_i(16)].pack("U")
     end
     
     raise ArgumentError, "You can only pass one character" if char.size > 1
