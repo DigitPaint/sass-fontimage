@@ -90,8 +90,8 @@ class SassFontimage::SassExtensions::FontImageGenerator < Sass::Script::Literal
       url <<  @environment.options[:custom][:font_image_url]
       url << path.to_s
       url.join("/").squeeze("/")
-    elsif @environment.options[:css_location]
-      base = Pathname.new(@environment.options[:css_location])
+    else
+      base = Pathname.new(@environment.options[:css_filename]).dirname
       path.relative_path_from(base)
     end
 
